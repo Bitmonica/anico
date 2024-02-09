@@ -5,22 +5,15 @@ module.exports = {
     content: ["./src/**/*.vue", "./public/**/*.html"],
   },
   theme: {
-    extend: {
-      colors: {
-        rose: colors.rose,
-        green: {
-          light: "#40DCA5",
-        },
-      },
-    },
-    flex: {
-      new: "1 0 auto",
-    },
+    extend: {},
   },
   variants: {
     extend: {
       animation: ["motion-safe"],
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/aspect-ratio"),
+    require("@tailwindcss/line-clamp"),
+  ],
 };

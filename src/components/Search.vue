@@ -2,13 +2,14 @@
   <!-- TODO -->
   <!-- 1) Advanced Filter
 2) Grid List Toggle
-3) Genre Badges
 5) Card Revamp
-6) Hover Popups / card hover popup
+6) Hover Popups / card hover popup: title
 7) Header component 
-8) Hover states
-9) Shadow -->
+10) Scroll to top button -->
   <div class="container">
+    <!-- <h1 class="mt-10 mb-10 text-3xl font-semibold filter drop-shadow-sm">
+      AniKo
+    </h1> -->
     <vue-progress-bar v-if="loading"></vue-progress-bar>
     <form
       class="w-auto md:w-full max-w-sm ml-20 py-5 md:mt-1"
@@ -33,32 +34,68 @@
         >
           Search
         </button>
-        <button
-          type="button"
-          class="ease-in-out transition-all duration-150 focus:outline-none flex-shrink-0 border-2 border-gray-800 hover:bg-gray-800 text-gray-800 hover:text-white text-sm py-1 px-2 rounded-lg font-semibold tracking-widest"
-        >
-          <a
-            href="https://github.com/Sync-Codes"
-            target="_blank"
-            rel="noopener noreferrer"
+        <!-- <a
+          href="https://github.com/Sync-Codes/AniKo"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex justify-items-center align-middle"
+          ><button
+            type="button"
+            class="ease-in-out transition-all duration-150 focus:outline-none flex-shrink-0 border-2 border-gray-800 hover:bg-gray-800 text-gray-800 hover:text-white text-sm py-1 px-2 rounded-lg font-semibold tracking-widest"
           >
             <i class="fab fa-github"></i>
-            Github</a
-          >
-        </button>
+            Github
+          </button></a
+        > -->
+            <p>isDark: {{ isDark }}</p>
+    <button
+    type="button"
+    id="toggleModeBtn"
+    @click="toggleDark()"
+    class="ease-in-out transition-all duration-150 focus:outline-none flex-shrink-0 border-2 border-gray-800 hover:bg-gray-800 text-gray-800 hover:text-white text-sm py-1 px-2 rounded-lg font-semibold tracking-widest"
+    >
+    <i class="fa-solid fa-moon-over-sun"></i>
+    Light/Dark
+    </button>
       </div>
     </form>
-    <!-- header and link  -->
+    <!-- <span><i class="w-full h-full fas fa-adjust"></i></span> -->
+    <!-- <h1 class="text-gray-800 font-semibold tracking-wide text-right">
+      <a
+        href="https://github.com/Sync-Codes/AniKo"
+        target="_blank"
+        rel="noopener noreferrer"
+        >AniKo</a
+      >
+    </h1> -->
+    <!-- card comp  -->
     <div v-if="loading === false">
+      <div v-if="totalResults === 0">
+        <div class="hidden justify-items-start mx-10">
+          <h1 class="text-xl font-semibold mb-1 py-2 filter drop-shadow-sm">
+            Total Results: {{ totalResults }}
+          </h1>
+        </div>
+      </div>
+      <div v-else>
+        <div class="flex justify-items-start justify-start mx-10">
+          <h1 class="text-xl font-semibold mb-1 py-2 filter drop-shadow-lg">
+            Total Results: {{ totalResults }}
+          </h1>
+        </div>
+      </div>
       <Card class="mt-10" :animes="anime"></Card>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+// import axios from "axios";
 import "@/assets/css/tailwind.css";
 import Card from "@/components/Card";
+import { useDark, useToggle } from "@vueuse/core";
+import { async } from "q";
+import GetData from "../services/GetData";
 
 export default {
   name: "Search",
@@ -74,9 +111,14 @@ export default {
       animeCount: 0,
       mangaCount: 0,
       totalResults: 0,
+      isDark: useDark()
+      // toggleDark: useToggle(isDark)
     };
   },
   methods: {
+    toggleDark: async function() {
+      useToggle(this.isDark)
+    },
     getAnime: async function() {
       this.loading = true;
       this.$Progress.start();
@@ -109,7 +151,7 @@ export default {
                 month
                 day
               }
-              studios {
+              studios(isMain: true) {
                 nodes {
                   name
                 }
@@ -143,19 +185,14 @@ export default {
         perPage: 100,
       };
 
-      const headers = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
+      // const headers = {
+      //   "Content-Type": "application/json",
+      //   Accept: "application/json",
+      // };
 
-      const result = await axios({
-        url: "https://graphql.anilist.co",
-        method: "post",
-        data: {
-          query,
-          variables,
-        },
-        headers,
+      const result = await GetData.getTitles({
+        query,
+        variables,
       }).catch((err) => this.handleErrors(err));
       setTimeout(() => {
         this.$Progress.finish();
@@ -179,8 +216,9 @@ export default {
         return a.isAdult === false;
       });
       // console.log(this.anime);
-      result.data.data.Page.media.forEach((e) => {
+      this.anime.forEach((e) => {
         if (e.type === "ANIME") {
+          console.log(e.title.romaji, e.studios.nodes[0].name);
           this.animeCount++;
         } else if (e.type === "MANGA") {
           this.mangaCount++;
@@ -188,13 +226,14 @@ export default {
       });
     },
     handleErrors: function(err) {
-      if (err.response.status === "404") {
-        return this.$toasted.show("No results. Try again!", {
-          theme: "outline",
-          icon: "exclamation-triangle",
-          duration: 4000,
-        });
-      }
+      console.log(err.message);
+      // if (err.response.status === "404") {
+      //   return this.$toasted.show("No results. Try again!", {
+      //     theme: "outline",
+      //     icon: "exclamation-triangle",
+      //     duration: 4000,
+      //   });
+      // }
     },
   },
 };
